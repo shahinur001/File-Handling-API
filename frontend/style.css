@@ -40,6 +40,18 @@ input[type="file"] {
     padding: 5px;
 }
 
+.loader-overlay.active {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.loader-overlay::after {
+    content: "Loading...";
+    color: white;
+    font-size: 18px;
+}
+
 button {
     padding: 8px 15px;
     background-color: #3498db;

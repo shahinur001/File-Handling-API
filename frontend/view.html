@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View File</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 font-sans">
+    <div class="container mx-auto p-6">
+        <!-- Header -->
+        <h1 class="text-3xl font-bold text-gray-800 mb-6">View File: <span id="filename"></span></h1>
+
+        <!-- Search Bar -->
+        <div class="mb-6">
+            <input type="text" id="searchInput" placeholder="Search within file..."
+                class="w-full border p-2 rounded-lg">
+        </div>
+
+        <!-- File Content -->
+        <div id="fileContent" class="bg-white p-6 rounded-lg shadow-md"></div>
+    </div>
+
+    <script>
+        const API_URL = "http://127.0.0.1:8000";
+        const urlParams = new URLSearchParams(window.location.search);
+        const fileId = urlParams.get("fileId");
+        const bucket = urlParams.get("bucket");
+        const filename = urlParams.get("filename");
+
+        // Set filename
+        document.getElementById("filename").textContent = filename;
+
+        // Fetch and display file content
+        async function fetchFileContent() {
+            try {
+                const response = await fetch(`${API_URL}/file/${fileId}/${bucket}?inline=true`);
+                const contentType = response.headers.get("content-type");
+
+                if (bucket === "word") {
+                    if (!contentType.includes("json")) {
+                        throw new Error("Expected JSON response for Word content, got raw file");
+                    }
+                    const data = await response.json();
+                    document.getElementById("fileContent").innerHTML = `<pre class="whitespace-pre-wrap">${data.content}</pre>`;
+                } else if (contentType.includes("image")) {
+                    const blob = await response.blob();
+                    const url = URL.createObjectURL(blob);
+                    document.getElementById("fileContent").innerHTML = `<img src="${url}" class="max-w-full h-auto">`;
+                } else if (contentType.includes("pdf")) {
+                    const blob = await response.blob();
+                    const url = URL.createObjectURL(blob);
+                    document.getElementById("fileContent").innerHTML = `<iframe src="${url}" class="w-full h-96"></iframe>`;
+                } else {
+                    const text = await response.text();
+                    document.getElementById("fileContent").innerHTML = `<pre class="whitespace-pre-wrap">${text}</pre>`;
+                }
+            } catch (error) {
+                console.error("Fetch error:", error);
+                document.getElementById("fileContent").innerHTML = `<p class="text-red-500">Error loading content: ${error.message}</p>`;
+            }
+        }
+
+        // Search within file content (only for text-based content)
+        document.getElementById("searchInput").addEventListener("input", (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const contentElement = document.getElementById("fileContent");
+            const originalContent = contentElement.textContent;
+
+            if (searchTerm && originalContent.toLowerCase().includes(searchTerm)) {
+                const highlighted = originalContent.replace(
+                    new RegExp(searchTerm, "gi"),
+                    match => `<span class="bg-yellow-200">${match}</span>`
+                );
+                contentElement.innerHTML = `<pre class="whitespace-pre-wrap">${highlighted}</pre>`;
+            } else {
+                fetchFileContent(); // Reset content if no match
+            }
+        });
+
+        // Initial fetch
+        fetchFileContent();
+    </script>
+</body>
+
+</html>

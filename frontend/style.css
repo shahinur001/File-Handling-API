@@ -6,12 +6,12 @@ body {
 }
 
 .container {
-    max-width: 900px;
+    max-width: 1000px;
     margin: 0 auto;
     background: #fff;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
 h1 {
@@ -20,99 +20,150 @@ h1 {
     margin-bottom: 30px;
 }
 
-h2 {
-    color: #34495e;
+.upload-section {
+    margin-bottom: 30px;
+    padding: 20px;
+    background: #f9f9f9;
+    border-radius: 8px;
+}
+
+.form-group {
     margin-bottom: 15px;
 }
 
-.upload-section,
-.file-list-section {
+label {
+    display: block;
+    margin-bottom: 5px;
+    color: #34495e;
+}
+
+input[type="file"],
+input[type="text"] {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+.search-section {
+    margin: 20px 0;
+}
+
+.file-table-section,
+.position-search-section {
+    overflow-x: auto;
     margin-bottom: 30px;
 }
 
-form {
-    display: flex;
-    gap: 10px;
-    align-items: center;
+#fileTable,
+#positionTable {
+    width: 100%;
+    border-collapse: collapse;
 }
 
-input[type="file"] {
-    padding: 5px;
+#fileTable th,
+#fileTable td,
+#positionTable th,
+#positionTable td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
 }
 
-.loader-overlay.active {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.loader-overlay::after {
-    content: "Loading...";
+#fileTable th,
+#positionTable th {
+    background: #2c3e50;
     color: white;
-    font-size: 18px;
+}
+
+#fileTable tr:hover,
+#positionTable tr:hover {
+    background: #f5f5f5;
 }
 
 button {
     padding: 8px 15px;
-    background-color: #3498db;
-    color: white;
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: all 0.3s;
+}
+
+.upload-btn {
+    background: #2ecc71;
+    color: white;
+}
+
+.view-btn {
+    background: #3498db;
+    color: white;
+}
+
+.download-btn {
+    background: #e67e22;
+    color: white;
+}
+
+.update-btn {
+    background: #9b59b6;
+    color: white;
 }
 
 button:hover {
-    background-color: #2980b9;
+    opacity: 0.9;
 }
 
-#uploadMessage {
-    margin-top: 10px;
-    color: #27ae60;
-}
-
-#fileTable {
+.loader-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
     width: 100%;
-    border-collapse: collapse;
-    margin-top: 15px;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
 }
 
-#fileTable th,
-#fileTable td {
-    padding: 10px;
-    text-align: left;
-    border-bottom: 1px solid #ddd;
+.loader-overlay.active {
+    display: flex;
 }
 
-#fileTable th {
-    background-color: #ecf0f1;
-    color: #2c3e50;
+.loader {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
 }
 
-#fileTable tr:nth-child(even) {
-    background-color: #f9f9f9;
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
-#fileTable tr:hover {
-    background-color: #f1f1f1;
-}
+@media (max-width: 768px) {
+    .container {
+        padding: 15px;
+    }
 
-#fileTable td button {
-    margin-right: 5px;
-    padding: 5px 10px;
-    font-size: 14px;
-}
+    button {
+        padding: 6px 10px;
+    }
 
-#fileTable td input[type="file"] {
-    display: inline-block;
-    margin-right: 5px;
-}
-
-#refreshFiles {
-    margin-bottom: 10px;
-    background-color: #2ecc71;
-}
-
-#refreshFiles:hover {
-    background-color: #27ae60;
+    #fileTable th,
+    #fileTable td,
+    #positionTable th,
+    #positionTable td {
+        padding: 8px;
+    }
 }

@@ -6,53 +6,68 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>File Upload & Management</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+
+        .shadow-hover:hover {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .table-row-hover:hover {
+            background-color: #f8fafc;
+            transition: background-color 0.2s;
+        }
+    </style>
 </head>
 
-<body class="bg-gray-100 font-sans">
-    <div class="container mx-auto p-6">
-        <!-- Header -->
-        <h1 class="text-3xl font-bold text-gray-800 mb-6">File Management System</h1>
+<body class="font-sans">
+    <div class="container mx-auto p-4 md:p-6 max-w-6xl">
+        <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-6 text-center">File Management System</h1>
 
-        <!-- File Upload Section -->
-        <div class="bg-white p-6 rounded-lg shadow-md mb-6">
-            <h2 class="text-xl font-semibold mb-4">Upload File</h2>
-            <form id="uploadForm" enctype="multipart/form-data" class="flex items-center space-x-4">
-                <input type="file" id="fileInput" class="border p-2 rounded-lg" required>
+        <div class="bg-white p-6 rounded-xl shadow-md mb-6 shadow-hover">
+            <h2 class="text-xl md:text-2xl font-semibold text-gray-800 mb-4">Upload File</h2>
+            <form id="uploadForm" enctype="multipart/form-data" class="flex flex-col sm:flex-row items-center gap-4">
+                <input type="file" id="fileInput"
+                    class="w-full sm:w-auto border-2 border-gray-300 p-2 rounded-lg focus:border-indigo-500 focus:outline-none"
+                    required>
                 <button type="submit"
-                    class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">Upload</button>
+                    class="w-full sm:w-auto bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition-colors">Upload</button>
             </form>
             <p id="uploadMessage" class="mt-2 text-sm text-green-600 hidden">File uploaded successfully!</p>
         </div>
 
-        <!-- Search and Sort Section -->
-        <div class="flex justify-between mb-6">
-            <div class="w-1/2">
-                <input type="text" id="searchInput" placeholder="Search files by word..."
-                    class="w-full border p-2 rounded-lg">
-            </div>
-            <div>
-                <select id="sortByType" class="border p-2 rounded-lg">
-                    <option value="">Sort by File Type</option>
-                    <option value="pdf">PDF</option>
-                    <option value="image">Image</option>
-                    <option value="json">JSON</option>
-                    <option value="word">Word</option>
-                    <option value="text">Text</option>
-                    <option value="csv">CSV</option>
-                    <option value="other">Other</option>
-                </select>
-            </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+            <input type="text" id="searchInput" placeholder="Search files by content..."
+                class="w-full border-2 border-gray-300 p-2 rounded-lg focus:border-indigo-500 focus:outline-none">
+            <select id="sortByType"
+                class="w-full border-2 border-gray-300 p-2 rounded-lg focus:border-indigo-500 focus:outline-none">
+                <option value="">Sort by File Type</option>
+                <option value="pdf">PDF</option>
+                <option value="image">Image</option>
+                <option value="json">JSON</option>
+                <option value="word">Word</option>
+                <option value="text">Text</option>
+                <option value="csv">CSV</option>
+                <option value="other">Other</option>
+            </select>
+            <input type="text" id="filterByName" placeholder="Filter by file name..."
+                class="w-full border-2 border-gray-300 p-2 rounded-lg focus:border-indigo-500 focus:outline-none">
         </div>
 
-        <!-- File List Table -->
-        <div class="bg-white p-6 rounded-lg shadow-md">
-            <table class="w-full text-left">
-                <thead>
-                    <tr class="bg-gray-200">
-                        <th class="p-3">Sl No</th>
-                        <th class="p-3">File Name</th>
-                        <th class="p-3">File Type</th>
-                        <th class="p-3">Actions</th>
+        <div class="bg-white p-6 rounded-xl shadow-md shadow-hover overflow-x-auto">
+            <table class="w-full text-left min-w-[640px]">
+                <thead class="bg-indigo-100">
+                    <tr>
+                        <th class="p-3 text-indigo-800 font-semibold">Sl No</th>
+                        <th class="p-3 text-indigo-800 font-semibold">File Name</th>
+                        <th class="p-3 text-indigo-800 font-semibold">File Type</th>
+                        <th class="p-3 text-indigo-800 font-semibold">Actions</th>
+                        <th class="p-3 text-indigo-800 font-semibold">Upload Date</th>
+                        <th class="p-3 text-indigo-800 font-semibold">Download Count</th>
                     </tr>
                 </thead>
                 <tbody id="fileList"></tbody>
@@ -76,27 +91,34 @@
         function renderFiles(fileArray) {
             const fileList = document.getElementById("fileList");
             fileList.innerHTML = "";
+            if (fileArray.length === 0) {
+                fileList.innerHTML = `<tr><td colspan="4" class="text-center text-red-500 p-3">No matching files found.</td></tr>`;
+                return;
+            }
             fileArray.forEach((file, index) => {
+                console.log(file)
                 const row = `
-            <tr class="border-b">
-                <td class="p-3">${index + 1}</td>
-                <td class="p-3">${file.filename}</td>
-                <td class="p-3">${file.bucket}</td>
-                <td class="p-3 flex space-x-2">
-                    <button onclick="downloadFile('${file.file_id}', '${file.bucket}')" class="bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600">Download</button>
-                    <button onclick="deleteFile('${file.file_id}', '${file.bucket}', this)" data-file-id="${file.file_id}" class="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 delete-btn">Delete</button>
-                    <label class="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600 cursor-pointer">
-                        Update
-                        <input type="file" class="hidden" onchange="updateFile('${file.file_id}', '${file.bucket}', this.files[0])">
-                    </label>
-                    <button onclick="viewFile('${file.file_id}', '${file.bucket}', '${file.filename}')" class="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600">View</button>
-                </td>
-            </tr>
-        `;
+                    <tr class="border-b table-row-hover">
+                        <td class="p-3">${index + 1}</td>
+                        <td class="p-3">${file.filename}</td>
+                        <td class="p-3">${file.bucket}</td>
+                        <td class="p-3 flex flex-wrap gap-2">
+                            <button onclick="downloadFile('${file.file_id}', '${file.bucket}')" class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">Download</button>
+                            <button onclick="deleteFile('${file.file_id}', '${file.bucket}')" class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700">Delete</button>
+                            <label class="bg-amber-600 text-white px-3 py-1 rounded hover:bg-amber-700 cursor-pointer">
+                                Update
+                                <input type="file" class="hidden" onchange="updateFile('${file.file_id}', '${file.bucket}', this.files[0])">
+                            </label>
+                            <button onclick="viewFile('${file.file_id}', '${file.bucket}', '${file.filename}')" class="bg-indigo-600 text-white px-3 py-1 rounded hover:bg-indigo-700">View</button>
+                        </td>
+                        <td class="p-3">${file.upload_time}</td>
+                        <td class="p-3">${file.downloadsCount}</td>
+
+                    </tr>
+                `;
                 fileList.innerHTML += row;
             });
         }
-
 
         // Upload file
         document.getElementById("uploadForm").addEventListener("submit", async (e) => {
@@ -112,12 +134,12 @@
             if (response.ok) {
                 document.getElementById("uploadMessage").classList.remove("hidden");
                 setTimeout(() => document.getElementById("uploadMessage").classList.add("hidden"), 3000);
-                fileInput.value = ""; // Reset file input
+                fileInput.value = "";
                 fetchFiles();
             }
         });
 
-        // Search files
+        // Search files by content
         document.getElementById("searchInput").addEventListener("input", async (e) => {
             const word = e.target.value.trim();
             const fileList = document.getElementById("fileList");
@@ -128,63 +150,66 @@
                     const data = await response.json();
 
                     if (data.matched_pdfs.length === 0) {
-                        // No matches found, show message
                         fileList.innerHTML = `<tr><td colspan="4" class="text-center text-red-500 p-3">No files found containing "${word}".</td></tr>`;
                     } else {
-                        // Filter files based on matched results
                         const matchedFiles = data.matched_pdfs.map(file => ({
                             filename: file.filename,
                             file_id: file.pdf_id,
                             bucket: files.find(f => f.file_id === file.pdf_id)?.bucket || "unknown"
                         }));
-                        renderFiles(matchedFiles); // Display only matched files
+                        renderFiles(matchedFiles);
                     }
                 } catch (error) {
                     console.error("Search Error:", error);
                     fileList.innerHTML = `<tr><td colspan="4" class="text-center text-red-500 p-3">Error searching files.</td></tr>`;
                 }
             } else {
-                // If search input is empty, restore the full file list
-                renderFiles(files);
+                applyFilters(); // Apply name and type filters when search is cleared
             }
         });
-
 
         // Sort by file type
-        document.getElementById("sortByType").addEventListener("change", (e) => {
-            const type = e.target.value;
-            if (type) {
-                const filteredFiles = files.filter(file => file.bucket === type);
-                renderFiles(filteredFiles);
-            } else {
-                renderFiles(files);
-            }
+        document.getElementById("sortByType").addEventListener("change", () => {
+            applyFilters();
         });
 
-        // Download file
+        // Filter by file name
+        document.getElementById("filterByName").addEventListener("input", () => {
+            applyFilters();
+        });
+
+        // Combined filter function for type and name
+        function applyFilters() {
+            const type = document.getElementById("sortByType").value;
+            const nameFilter = document.getElementById("filterByName").value.trim().toLowerCase();
+            let filteredFiles = [...files];
+
+            if (type) {
+                filteredFiles = filteredFiles.filter(file => file.bucket === type);
+            }
+            if (nameFilter) {
+                filteredFiles = filteredFiles.filter(file => file.filename.toLowerCase().includes(nameFilter));
+            }
+            renderFiles(filteredFiles);
+        }
+
+        // Action functions
         async function downloadFile(fileId, bucket) {
             window.location.href = `${API_URL}/file/${fileId}/${bucket}`;
         }
 
-        // Delete file
         async function deleteFile(fileId, bucket) {
             await fetch(`${API_URL}/file/${fileId}/${bucket}`, { method: "DELETE" });
             fetchFiles();
         }
 
-        // Update file
         async function updateFile(fileId, bucket, file) {
             const formData = new FormData();
             formData.append("file", file);
-            await fetch(`${API_URL}/file/${fileId}/${bucket}`, {
-                method: "PUT",
-                body: formData
-            });
+            await fetch(`${API_URL}/file/${fileId}/${bucket}`, { method: "PUT", body: formData });
             fetchFiles();
         }
 
-
-        // View file
         function viewFile(fileId, bucket, filename) {
             window.location.href = `view.html?fileId=${fileId}&bucket=${bucket}&filename=${filename}`;
         }

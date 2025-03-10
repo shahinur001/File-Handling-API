@@ -6,60 +6,117 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>View File</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Custom styles for smoother transitions */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+    </style>
 </head>
 
-<body class="bg-gray-100 font-sans">
-    <div class="container mx-auto p-6">
+<body class="bg-gray-50 font-['Inter'] min-h-screen flex items-center justify-center">
+    <div class="container mx-auto max-w-4xl p-6">
         <!-- Header -->
-        <h1 class="text-3xl font-bold text-gray-800 mb-6">View File: <span id="filename"></span></h1>
+        <div class="flex items-center justify-between mb-8">
+            <h1 class="text-3xl font-bold text-gray-900">
+                View File: <span id="filename" class="text-gray-600"></span>
+            </h1>
+            <a href="#" onclick="history.back()" class="text-blue-600 hover:text-blue-800 transition-colors">
+                ← Back
+            </a>
+        </div>
 
         <!-- Search Bar -->
-        <div class="mb-6">
+        <div class="relative mb-8">
             <input type="text" id="searchInput" placeholder="Search within file..."
-                class="w-full border p-2 rounded-lg">
+                class="w-full p-4 pl-12 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+            <span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400">🔍</span>
         </div>
 
         <!-- File Content -->
-        <div id="fileContent" class="bg-white p-6 rounded-lg shadow-md"></div>
+        <div id="fileContent"
+            class="bg-white p-8 rounded-xl shadow-lg min-h-[400px] flex items-center justify-center fade-in overflow-auto">
+            <p class="text-gray-500">Loading file content...</p>
+        </div>
     </div>
 
     <script>
         const API_URL = "http://127.0.0.1:8000";
+        // const API_URL = "https://file-upload-api-livid.vercel.app/";
+
         const urlParams = new URLSearchParams(window.location.search);
         const fileId = urlParams.get("fileId");
         const bucket = urlParams.get("bucket");
         const filename = urlParams.get("filename");
 
         // Set filename
-        document.getElementById("filename").textContent = filename;
+        document.getElementById("filename").textContent = filename || "Unnamed File";
+
+        // Store original content globally for resetting
+        let originalContent = "";
 
         // Fetch and display file content
         async function fetchFileContent() {
             try {
                 const response = await fetch(`${API_URL}/file/${fileId}/${bucket}?inline=true`);
                 const contentType = response.headers.get("content-type");
+                const contentElement = document.getElementById("fileContent");
+
+                contentElement.classList.remove("fade-in"); // Reset animation
+                void contentElement.offsetWidth; // Trigger reflow
+                contentElement.classList.add("fade-in");
 
                 if (bucket === "word") {
                     if (!contentType.includes("json")) {
                         throw new Error("Expected JSON response for Word content, got raw file");
                     }
                     const data = await response.json();
-                    document.getElementById("fileContent").innerHTML = `<pre class="whitespace-pre-wrap">${data.content}</pre>`;
+                    originalContent = data.content;
+                    contentElement.innerHTML = `<pre class="whitespace-pre-wrap text-gray-800 leading-relaxed">${data.content}</pre>`;
                 } else if (contentType.includes("image")) {
                     const blob = await response.blob();
                     const url = URL.createObjectURL(blob);
-                    document.getElementById("fileContent").innerHTML = `<img src="${url}" class="max-w-full h-auto">`;
-                } else if (contentType.includes("pdf")) {
-                    const blob = await response.blob();
-                    const url = URL.createObjectURL(blob);
-                    document.getElementById("fileContent").innerHTML = `<iframe src="${url}" class="w-full h-96"></iframe>`;
-                } else {
+                    originalContent = ""; // No searchable text for images
+                    contentElement.innerHTML = `<img src="${url}" class="max-w-full h-auto rounded-lg shadow-md" alt="File content">`;
+                } else if (bucket === "pdf") {
+                    if (!contentType.includes("json")) {
+                        throw new Error("Expected JSON response for Pdf content, got raw file");
+                    }
+                    const data = await response.json();
+                    console.log(data)
+                    originalContent = data.content;
+                    contentElement.innerHTML = `<pre class="whitespace-pre-wrap text-gray-800 leading-relaxed">${data.content}</pre>`;
+                }
+                else if (bucket === "csv") {
+                    if (!contentType.includes("json")) {
+                        throw new Error("Expected JSON response for CSV content, got raw file");
+                    }
+                    const data = await response.json();
+                    console.log(data)
+                    originalContent = data.content;
+                    contentElement.innerHTML = `<pre class="whitespace-pre-wrap text-gray-800 leading-relaxed">${data.content}</pre>`;
+                }
+                else {
                     const text = await response.text();
-                    document.getElementById("fileContent").innerHTML = `<pre class="whitespace-pre-wrap">${text}</pre>`;
+                    originalContent = text;
+                    contentElement.innerHTML = `<pre class="whitespace-pre-wrap text-gray-800 leading-relaxed">${text}</pre>`;
                 }
             } catch (error) {
                 console.error("Fetch error:", error);
-                document.getElementById("fileContent").innerHTML = `<p class="text-red-500">Error loading content: ${error.message}</p>`;
+                document.getElementById("fileContent").innerHTML = `
+                    <p class="text-red-600 font-medium">Error loading content: ${error.message}</p>
+                `;
             }
         }
 
@@ -67,16 +124,33 @@
         document.getElementById("searchInput").addEventListener("input", (e) => {
             const searchTerm = e.target.value.toLowerCase();
             const contentElement = document.getElementById("fileContent");
-            const originalContent = contentElement.textContent;
 
-            if (searchTerm && originalContent.toLowerCase().includes(searchTerm)) {
-                const highlighted = originalContent.replace(
-                    new RegExp(searchTerm, "gi"),
-                    match => `<span class="bg-yellow-200">${match}</span>`
-                );
-                contentElement.innerHTML = `<pre class="whitespace-pre-wrap">${highlighted}</pre>`;
+            if (!originalContent) {
+                // Non-text content (e.g., image, PDF) - show message
+                contentElement.innerHTML = `
+                    <p class="text-gray-600 italic">Search not available for this file type.</p>
+                `;
+                return;
+            }
+
+            if (searchTerm) {
+                if (originalContent.toLowerCase().includes(searchTerm)) {
+                    const highlighted = originalContent.replace(
+                        new RegExp(searchTerm, "gi"),
+                        match => `<span class="bg-yellow-300 text-gray-900 px-1 rounded">${match}</span>`
+                    );
+                    contentElement.innerHTML = `<pre class="whitespace-pre-wrap text-gray-800 leading-relaxed">${highlighted}</pre>`;
+                } else {
+                    contentElement.innerHTML = `
+                        <div class="text-center">
+                            <p class="text-gray-600 text-lg font-medium">Not Found</p>
+                            <p class="text-gray-500">"${searchTerm}" was not found in this file.</p>
+                        </div>
+                    `;
+                }
             } else {
-                fetchFileContent(); // Reset content if no match
+                // Reset to original content when search is cleared
+                contentElement.innerHTML = `<pre class="whitespace-pre-wrap text-gray-800 leading-relaxed">${originalContent}</pre>`;
             }
         });
 

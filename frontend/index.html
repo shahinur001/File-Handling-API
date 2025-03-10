@@ -61,13 +61,14 @@
         <div class="bg-white p-6 rounded-xl shadow-md shadow-hover overflow-x-auto">
             <table class="w-full text-left min-w-[640px]">
                 <thead class="bg-indigo-100">
-                    <tr>
+                    <tr class="">
                         <th class="p-3 text-indigo-800 font-semibold">Sl No</th>
                         <th class="p-3 text-indigo-800 font-semibold">File Name</th>
                         <th class="p-3 text-indigo-800 font-semibold">File Type</th>
                         <th class="p-3 text-indigo-800 font-semibold">Actions</th>
                         <th class="p-3 text-indigo-800 font-semibold">Upload Date</th>
-                        <th class="p-3 text-indigo-800 font-semibold">Download Count</th>
+                        <th class="p-3 text-indigo-800 font-semibold">Download</th>
+                        <th class="p-3 text-indigo-800 font-semibold">View</th>
                     </tr>
                 </thead>
                 <tbody id="fileList"></tbody>
@@ -90,6 +91,7 @@
         // Render files in table
         function renderFiles(fileArray) {
             const fileList = document.getElementById("fileList");
+            console.log(fileList)
             fileList.innerHTML = "";
             if (fileArray.length === 0) {
                 fileList.innerHTML = `<tr><td colspan="4" class="text-center text-red-500 p-3">No matching files found.</td></tr>`;
@@ -98,10 +100,10 @@
             fileArray.forEach((file, index) => {
                 console.log(file)
                 const row = `
-                    <tr class="border-b table-row-hover">
-                        <td class="p-3">${index + 1}</td>
+                    <tr class="border-b table-row-hover " data-file-id="${file.file_id}">
+                        <td class="p-3 text-center">${index + 1}</td>
                         <td class="p-3">${file.filename}</td>
-                        <td class="p-3">${file.bucket}</td>
+                        <td class="p-3 text-center">${file.bucket}</td>
                         <td class="p-3 flex flex-wrap gap-2">
                             <button onclick="downloadFile('${file.file_id}', '${file.bucket}')" class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">Download</button>
                             <button onclick="deleteFile('${file.file_id}', '${file.bucket}')" class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700">Delete</button>
@@ -112,7 +114,8 @@
                             <button onclick="viewFile('${file.file_id}', '${file.bucket}', '${file.filename}')" class="bg-indigo-600 text-white px-3 py-1 rounded hover:bg-indigo-700">View</button>
                         </td>
                         <td class="p-3">${file.upload_time}</td>
-                        <td class="p-3">${file.downloadsCount}</td>
+                        <td class="p-3 download-count text-center">${file.downloadsCount}</td>
+                        <td class="p-3 view-count text-center">${file.views_Count}</td>
 
                     </tr>
                 `;
@@ -196,6 +199,15 @@
         // Action functions
         async function downloadFile(fileId, bucket) {
             window.location.href = `${API_URL}/file/${fileId}/${bucket}`;
+            const fileRow = document.querySelector(`tr[data-file-id="${fileId}"]`);
+
+            // If the row is found, update the download count
+            if (fileRow) {
+                const downloadCountCell = fileRow.querySelector('.download-count');
+                let currentCount = parseInt(downloadCountCell.textContent);
+                downloadCountCell.textContent = currentCount + 1;
+            }
+
         }
 
         async function deleteFile(fileId, bucket) {
@@ -211,7 +223,18 @@
         }
 
         function viewFile(fileId, bucket, filename) {
+            const fileRow = document.querySelector(`tr[data-file-id="${fileId}"]`);
+
+            // If the row is found, update the download count
+            if (fileRow) {
+                const downloadCountCell = fileRow.querySelector('.view-count');
+                let currentCount = parseInt(downloadCountCell.textContent);
+                downloadCountCell.textContent = currentCount + 1;
+            }
+
             window.location.href = `view.html?fileId=${fileId}&bucket=${bucket}&filename=${filename}`;
+            fetchFiles();  // 
+
         }
 
         // Initial fetch

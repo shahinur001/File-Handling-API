@@ -186,14 +186,17 @@
                 try {
                     const response = await fetch(`${API_URL}/search/?word=${word}`);
                     const data = await response.json();
-
-                    if (data.matched_pdfs.length === 0) {
+                    console.log(data)
+                    if (data.matched_files.length === 0) {
                         fileList.innerHTML = `<tr><td colspan="4" class="text-center text-red-500 p-3">No files found containing "${word}".</td></tr>`;
                     } else {
-                        const matchedFiles = data.matched_pdfs.map(file => ({
+                        const matchedFiles = data.matched_files.map(file => ({
                             filename: file.filename,
-                            file_id: file.pdf_id,
-                            bucket: files.find(f => f.file_id === file.pdf_id)?.bucket || "unknown"
+                            file_id: file.file_id,
+                            upload_time: file.upload_time,
+                            views_Count: file.views_Count,
+                            downloadsCount: file.downloadsCount,
+                            bucket: files.find(f => f.file_id === file.file_id)?.bucket || "unknown"
                         }));
                         renderFiles(matchedFiles);
                     }

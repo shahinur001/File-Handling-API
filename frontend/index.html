@@ -40,8 +40,8 @@
             <p id="uploadMessage" class="mt-2 text-sm text-green-600 hidden">File uploaded successfully!</p>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-            <input type="text" id="searchInput" placeholder="Search files by content..."
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <input type="text" id="searchInput" placeholder="Search files by word..."
                 class="w-full border-2 border-gray-300 p-2 rounded-lg focus:border-indigo-500 focus:outline-none">
             <select id="sortByType"
                 class="w-full border-2 border-gray-300 p-2 rounded-lg focus:border-indigo-500 focus:outline-none">
@@ -56,6 +56,16 @@
             </select>
             <input type="text" id="filterByName" placeholder="Filter by file name..."
                 class="w-full border-2 border-gray-300 p-2 rounded-lg focus:border-indigo-500 focus:outline-none">
+
+            <select id="sortByDownloadCount"
+                class="w-full border-2 border-gray-300 p-2 rounded-lg focus:border-indigo-500 focus:outline-none">
+                <option value="0">Sort by Download Quantity</option>
+                <option value="5">5 downloads</option>
+                <option value="10">10 downloads</option>
+                <option value="15">15 downloads</option>
+                <option value="20">More than 15 downloads</option>
+            </select>
+
         </div>
 
         <div class="bg-white p-6 rounded-xl shadow-md shadow-hover overflow-x-auto">
@@ -80,6 +90,33 @@
         const API_URL = "http://127.0.0.1:8000";
         let files = [];
 
+
+
+        async function fetchTopDownloads(number) {
+            try {
+                const response = await fetch(`${API_URL}/top-downloads?numbers=${number}`);
+                const data = await response.json();
+
+                if (data.top_downloaded_files && data.top_downloaded_files.length > 0) {
+                    files = data.top_downloaded_files;
+                    renderFiles(files); // Re-render the file list
+                } else {
+                    console.error('No top download files found.');
+                }
+            } catch (error) {
+                console.error('Error fetching top downloads:', error);
+            }
+        }
+
+        document.getElementById('sortByDownloadCount').addEventListener('change', (e) => {
+            const number = parseInt(e.target.value, 10);
+            if (!isNaN(number) && Number.isInteger(number) && number > 0) {
+                fetchTopDownloads(number);
+            } else {
+                fetchFiles(); // Fallback to regular file list when 0 or invalid
+            }
+        });
+
         // Fetch and display files
         async function fetchFiles() {
             const response = await fetch(`${API_URL}/files/`);
@@ -91,14 +128,12 @@
         // Render files in table
         function renderFiles(fileArray) {
             const fileList = document.getElementById("fileList");
-            console.log(fileList)
             fileList.innerHTML = "";
             if (fileArray.length === 0) {
                 fileList.innerHTML = `<tr><td colspan="4" class="text-center text-red-500 p-3">No matching files found.</td></tr>`;
                 return;
             }
             fileArray.forEach((file, index) => {
-                console.log(file)
                 const row = `
                     <tr class="border-b table-row-hover " data-file-id="${file.file_id}">
                         <td class="p-3 text-center">${index + 1}</td>
@@ -185,6 +220,7 @@
         function applyFilters() {
             const type = document.getElementById("sortByType").value;
             const nameFilter = document.getElementById("filterByName").value.trim().toLowerCase();
+
             let filteredFiles = [...files];
 
             if (type) {
@@ -239,6 +275,8 @@
 
         // Initial fetch
         fetchFiles();
+        // fetchTopDownloads();
+
     </script>
 </body>
 

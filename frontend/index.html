@@ -96,7 +96,7 @@
             try {
                 const response = await fetch(`${API_URL}/top-downloads?numbers=${number}`);
                 const data = await response.json();
-
+                console.log(data)
                 if (data.top_downloaded_files && data.top_downloaded_files.length > 0) {
                     files = data.top_downloaded_files;
                     renderFiles(files); // Re-render the file list
@@ -121,12 +121,14 @@
         async function fetchFiles() {
             const response = await fetch(`${API_URL}/files/`);
             const data = await response.json();
+            // console.log(data)
             files = data.files;
             renderFiles(files);
         }
 
         // Render files in table
         function renderFiles(fileArray) {
+            // console.log(fileArray)
             const fileList = document.getElementById("fileList");
             fileList.innerHTML = "";
             if (fileArray.length === 0) {

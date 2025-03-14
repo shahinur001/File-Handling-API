@@ -107,6 +107,30 @@
                     originalContent = data.content;
                     contentElement.innerHTML = `<pre class="whitespace-pre-wrap text-gray-800 leading-relaxed">${data.content}</pre>`;
                 }
+                else if (bucket === "video") {
+                    const blob = await response.blob();
+                    const url = URL.createObjectURL(blob);
+                    originalContent = ""; // No searchable text for videos
+                    contentElement.innerHTML = `
+                    <video controls class="max-w-full h-auto rounded-lg shadow-md">
+                        <source src="${url}" type="${contentType}">
+                        Your browser does not support the video tag.
+                    </video>
+                    `;
+                }
+                else if (bucket === "audio") {
+                    const blob = await response.blob();
+                    const url = URL.createObjectURL(blob);
+                    originalContent = ""; // No searchable text for videos
+                    contentElement.innerHTML = `
+                    <audio controls class="w-full max-w-lg rounded-lg shadow-md">
+                        <source src="${url}" type="${contentType}">
+                        Your browser does not support the audio element.
+                    </audio>
+
+                    `;
+                }
+
                 else {
                     const text = await response.text();
                     originalContent = text;
